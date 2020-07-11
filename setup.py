@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name="floodgate",
-    version="0.5",
+    version="1.0.0",
     description="Request rate limiter for Flask",
     author="Bhavesh Pareek",
     author_email="bhavesh.pareek36@gmail.com",

@@ -1,4 +1,5 @@
 from .limit_strategies import BanFor
+from .units import SECONDS
 from time import time
 from math import floor
 
@@ -9,15 +10,15 @@ dummy = BanFor(0)
 class Gate:
     def __init__(
         self,
+        request_count=10,
         *,
         ip_resolver=None,
-        use_heroku_ip_resolver=False,
-        limit=3,
+        per=3,
+        units=SECONDS,
         max_size=3000,
-        min_requests=10,
         ban_time: int = 0,
     ):
-        if use_heroku_ip_resolver:
+        if ip_resolver == "heroku":
 
             def resolver(request):
                 return request.headers.get("x-forwarded-for").split(",")[-1].strip()
@@ -33,8 +34,8 @@ class Gate:
         self._ip_addresses = []
         self._request_log = {}
         self.max_size = max_size
-        self.limit = limit
-        self.min_requests = min_requests
+        self.limit = per * units
+        self.request_count = request_count
         self.ban_time = ban_time
 
     def _remove_first_ip(self):
@@ -52,11 +53,12 @@ class Gate:
         last_request = time()
         request_timestamps = logs[0]
         request_timestamps.append(last_request)
-        if len(request_timestamps) == self.min_requests + 1:
+        if len(request_timestamps) == self.request_count + 1:
             first = request_timestamps.pop(0)
             if floor(last_request - first) <= self.limit:
-                self._request_log[ip] = (logs[0], BanFor(self.ban_time))
-                return (True, logs[1].time_left())
+                ban = BanFor(self.ban_time)
+                self._request_log[ip] = (logs[0], ban)
+                return (True, ban.time_left())
             return (False, None)
         else:
             return (False, None)
@@ -72,4 +74,4 @@ class Gate:
                 self._remove_first_ip()
             self._ip_addresses.append(ip_address)
             self._request_log[ip_address] = ([time()], dummy)
-            return False
+            return (False, None)

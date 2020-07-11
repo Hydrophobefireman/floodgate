@@ -11,15 +11,18 @@ error = dumps(
     {"error": "You have been rate limited, try again in %S% seconds"}
 ).encode()
 
-default_error_response = lambda x: Response(
-    error.replace(b"%S%", x.encode()),
-    status=429,
-    headers={"x-rate-limit": "1", "x-time-left": x},
-)
+
+def default_error_response(t):
+    x = f"{int(t)}"
+    return Response(
+        error.replace(b"%S%", x.encode()),
+        status=429,
+        headers={"x-rate-limit": "1", "x-time-left": x},
+    )
 
 
 def guard(
-    number_of_requests=10,
+    request_count=10,
     *,
     per=3,
     units=SECONDS,
@@ -30,14 +33,12 @@ def guard(
     time_interval = per * units
 
     kwargs = {
-        "limit": time_interval,
-        "min_requests": number_of_requests,
+        "per": time_interval,
+        "units": units,
+        "request_count": request_count,
         "ban_time": ban_time,
+        "ip_resolver": ip_resolver,
     }
-    if ip_resolver == "heroku":
-        kwargs["use_heroku_ip_resolver"] = True
-    else:
-        kwargs["ip_resolver"] = ip_resolver
 
     guard = Gate(**kwargs)
 
@@ -46,7 +47,7 @@ def guard(
         def wrapper(*args, **kwargs):
             is_banned, time_left = guard.guard(request)
             if is_banned:
-                return default_error_response(f"{int(time_left)}")
+                return limit_response(time_left)
             return fn(*args, **kwargs)
 
         return wrapper
