@@ -1,0 +1,3 @@
+include README LICENSE.txt setup.cfg setup.py
+recursive-include floodgate/gates *
+global-exclude *.py[cod]
