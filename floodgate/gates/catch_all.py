@@ -47,18 +47,20 @@ class Gate:
 
     def is_offending(self, logs: tuple, ip: str):
         ban = logs[1]
-        if ban and ban.is_banned():
-            return (True, ban.time_left())
-
         last_request = time()
         request_timestamps = logs[0]
         request_timestamps.append(last_request)
+
         if len(request_timestamps) == self.request_count + 1:
             first = request_timestamps.pop(0)
             if floor(last_request - first) <= self.limit:
                 ban = BanFor(self.ban_time)
                 self._request_log[ip] = (logs[0], ban)
                 return (True, ban.time_left())
+
+            elif ban and ban.is_banned():
+                return (True, ban.time_left())
+
             return (False, None)
         else:
             return (False, None)
