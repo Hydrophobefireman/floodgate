@@ -87,6 +87,6 @@ def file_serve():
 You're probably going to be running your app behind some sort of reverse proxy
 or your PaaS provider has it's own way of dealing with providing your app with the real IP of the user
 
-Floodgate provides one reslover for heroku ( last ip in the x-forwarded-for header )
+Floodgate provides one resolver for heroku ( last ip in the x-forwarded-for header )
 
 you can make your own resolver that suits your needs and pass it to the guard.
